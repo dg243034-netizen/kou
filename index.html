@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Best Tomorrow</title>
+<style>
+:root{--bg:#f6f8f9;--card:#fff;--ink:#12304a;--sub:#4a6272;--sea:#1d7f8c;--sun:#f2a900;--red:#c62828;--line:#cfd9df;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1b26;--card:#16293a;--ink:#eef4f7;--sub:#a9bcc8;--sea:#5cc2cf;--sun:#ffc83d;--red:#ff6b6b;--line:#2b4256}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.7 "Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif}
+header{padding:18px 18px 8px;max-width:720px;margin:auto}
+h1{font-size:28px;margin:0;letter-spacing:.02em}
+header p{margin:0;color:var(--sub);font-size:16px}
+nav{display:flex;gap:6px;max-width:720px;margin:8px auto;padding:0 12px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5}
+nav button{flex:1;font:inherit;font-size:15px;font-weight:700;padding:12px 4px;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px}
+nav button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+main{max-width:720px;margin:auto;padding:8px 12px 60px}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+h2{font-size:22px;margin:0 0 8px}
+button.big,a.big{display:block;width:100%;text-align:center;text-decoration:none;font:inherit;font-weight:700;font-size:19px;padding:15px;border:0;border-radius:12px;background:var(--sea);color:#fff;margin:8px 0}
+button.alt,a.alt{background:transparent;color:var(--ink);border:2px solid var(--ink)}
+button.red{background:var(--red)}
+input,select{font:inherit;width:100%;padding:12px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);margin:4px 0 10px}
+label{font-weight:700;font-size:16px}
+.sh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.sh small{color:var(--sub);display:block}
+.sh button{font:inherit;font-size:14px;border:1px solid var(--line);background:none;color:var(--sub);border-radius:8px;padding:6px 10px}
+.banner{border-radius:14px;padding:18px;background:var(--red);color:#fff;font-size:24px;font-weight:700;line-height:1.5}
+.note{font-size:14px;color:var(--sub)}
+svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:12px;border:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.row input{width:28px;height:28px;margin:0}
+.row.done span{text-decoration:line-through;color:var(--sub)}
+.bd{display:inline-block;font-size:14px;font-weight:700;padding:2px 8px;border-radius:8px;margin:2px 4px 2px 0;border:1px solid var(--line)}
+.bd.o{background:var(--sea);color:#fff;border-color:var(--sea)}.bd.p{border-color:var(--sun);color:var(--ink)}.bd.x{color:var(--sub);text-decoration:line-through}
+.lk{display:flex;gap:8px;margin-top:6px}.lk a{flex:1;text-align:center;text-decoration:none;font-weight:700;padding:10px;border-radius:10px;border:2px solid var(--sea);color:var(--sea)}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+</style>
+</head>
+<body>
+<header><h1>Best Tomorrow</h1><p>明るい未来のために私たちができること（大阪市内版）</p></header>
+<nav role="tablist">
+<button role="tab" data-t="map" aria-selected="true">ピンチマップ</button>
+<button role="tab" data-t="ann" aria-selected="false">災害アナウンサー</button>
+<button role="tab" data-t="wide" aria-selected="false">避難場所一覧</button>
+</nav>
+<main>
+
+<section id="map" class="on">
+<div class="card">
+<h2>いまの場所と避難所（大阪市内）</h2>
+<button class="big" id="loc">位置情報を取得する</button>
+<p id="locmsg" class="note">位置情報を許可すると、避難所までの距離と時間がわかります。</p>
+<svg id="radar" viewBox="0 0 320 320" role="img" aria-label="現在地と避難所の位置関係"></svg>
+<p class="note">この図は方角と距離の目安です。実際の道順はGoogleマップで確認します。</p>
+</div>
+<div class="card">
+<h2>避難所を設定しておく</h2>
+<label for="sname">避難所の名前</label>
+<input id="sname" placeholder="例：〇〇小学校">
+<button class="big" id="addhere">いまいる場所を避難所として登録</button>
+<a class="big alt" id="find" href="#" target="_blank" rel="noopener">Googleマップで大阪市の避難所を探す</a>
+<details><summary class="note">緯度・経度を入力して登録</summary>
+<label for="slat">緯度</label><input id="slat" inputmode="decimal" placeholder="34.6937">
+<label for="slng">経度</label><input id="slng" inputmode="decimal" placeholder="135.5023">
+<button class="big alt" id="addman">この座標で登録</button></details>
+<div id="list"></div>
+</div>
+<div class="card">
+<label for="spd">歩く速さ（避難にかかる時間の計算に使います）</label>
+<select id="spd"><option value="60">ふつうに歩ける</option><option value="40">ゆっくり歩く</option><option value="25">杖や手すりが必要</option></select>
+</div>
+</section>
+
+<section id="wide">
+<div class="card"><h2>広域避難場所（大阪市）</h2>
+<button class="big" id="loc2">現在地から近い順に並べる</button><p id="locmsg2" class="note">現在地を取得すると、近い順に表示します。</p>
+<label for="ward">お住まいの区</label><select id="ward"></select>
+<label for="kind">災害の種類</label><select id="kind"><option value="">すべて</option><option>津波</option><option>地震</option><option>火災</option><option>洪水</option></select>
+<p class="note">大阪市の広域避難場所一覧（令和8年3月31日時点）をもとにしています。津波の「可」は、南海トラフ巨大地震の津波浸水想定域の外にある場合です。場所は地図で必ず確認してください。</p></div>
+<div id="sites"></div>
+</section>
+<section id="ann">
+<div class="card">
+<h2>災害アナウンサー</h2>
+<p class="note">いまは訓練モードです。実際の警報は、気象庁やお住まいの自治体の情報を必ず確認してください。</p>
+<label for="eta">津波の到達予想（分後）</label>
+<input id="eta" type="number" inputmode="numeric" value="20" min="1">
+<button class="big red" id="drill">避難訓練を始める</button>
+</div>
+<div id="annout"></div>
+<div class="card"><a class="big alt" href="https://www.jma.go.jp/bosai/map.html" target="_blank" rel="noopener">気象庁の防災情報を開く</a></div>
+</section>
+
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let me=null,shelters=store.get('bt_sh',[]);
+const OSK={a:34.58,b:34.80,c:135.37,d:135.62};
+const inOsaka=(la,ln)=>la>=OSK.a&&la<=OSK.b&&ln>=OSK.c&&ln<=OSK.d;
+shelters=shelters.filter(x=>inOsaka(x.lat,x.lng));
+$('#spd').value=store.get('bt_spd','60');
+$('#spd').onchange=()=>{store.set('bt_spd',$('#spd').value);drawMap()};
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
+ document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===b.dataset.t));
+});
+
+function dist(a,b){const R=6371000,r=Math.PI/180,dl=(b.lat-a.lat)*r,dg=(b.lng-a.lng)*r;
+ const h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+const mins=m=>Math.max(1,Math.round(m/Number($('#spd').value)));
+const fmtD=m=>m<1000?Math.round(m)+'m':(m/1000).toFixed(1)+'km';
+const mapsDir=s=>'https://www.google.com/maps/dir/?api=1&travelmode=walking&destination='+s.lat+','+s.lng+(me?'&origin='+me.lat+','+me.lng:'');
+
+function getLoc(cb){
+ $('#locmsg').textContent='位置情報を取得しています…';
+ if(!navigator.geolocation){$('#locmsg').textContent='この端末では位置情報を使えません。緯度・経度の入力で登録してください。';return}
+ navigator.geolocation.getCurrentPosition(p=>{me={lat:p.coords.latitude,lng:p.coords.longitude};
+  $('#locmsg').textContent=inOsaka(me.lat,me.lng)?'現在地を取得しました。':'現在地が大阪市の外のようです。このアプリは大阪市内専用です。';$('#find').href='https://www.google.com/maps/search/大阪市+避難所/@'+(inOsaka(me.lat,me.lng)?me.lat+','+me.lng:'34.6937,135.5023')+',14z';drawMap();if(typeof renderSites=='function')renderSites();cb&&cb()},
+ ()=>{$('#locmsg').textContent='位置情報を取得できませんでした。設定で位置情報の利用を許可してください。'},{enableHighAccuracy:true,timeout:10000});
+}
+$('#loc').onclick=()=>getLoc();
+$('#find').href='https://www.google.com/maps/search/大阪市+避難所/@34.6937,135.5023,12z';
+
+function addShelter(lat,lng){
+ if(!inOsaka(lat,lng)){alert('大阪市内の場所だけ登録できます。');return}
+ const name=$('#sname').value.trim()||'避難所'+(shelters.length+1);
+ shelters.push({name,lat,lng});store.set('bt_sh',shelters);$('#sname').value='';drawMap();
+}
+$('#addhere').onclick=()=>{ if(me){addShelter(me.lat,me.lng)}else getLoc(()=>addShelter(me.lat,me.lng)) };
+$('#addman').onclick=()=>{const a=parseFloat($('#slat').value),b=parseFloat($('#slng').value);
+ if(isNaN(a)||isNaN(b)||Math.abs(a)>90||Math.abs(b)>180){alert('緯度と経度を数字で入力してください。');return}
+ addShelter(a,b);$('#slat').value=$('#slng').value=''};
+
+function drawMap(){
+ const svg=$('#radar'),C=160;let h='';
+ const withD=shelters.map((s,i)=>({...s,i,d:me?dist(me,s):null}));
+ const max=Math.max(300,...withD.filter(s=>s.d!=null).map(s=>s.d))*1.15;
+ [1,.66,.33].forEach(f=>h+=`<circle cx="${C}" cy="${C}" r="${130*f}" fill="none" stroke="currentColor" opacity=".18"/>`);
+ h+=`<text x="${C}" y="${C-134}" text-anchor="middle" font-size="12" fill="currentColor" opacity=".6">北</text>`;
+ if(me){withD.forEach(s=>{const r=Math.PI/180,dx=(s.lng-me.lng)*Math.cos(me.lat*r),dy=s.lat-me.lat,n=Math.hypot(dx,dy)||1;
+  const rad=Math.min(130,s.d/max*130),x=C+dx/n*rad,y=C-dy/n*rad;
+  h+=`<line x1="${C}" y1="${C}" x2="${x}" y2="${y}" stroke="#f2a900" stroke-width="2" stroke-dasharray="5 4"/><circle cx="${x}" cy="${y}" r="9" fill="#1d7f8c"/><text x="${x}" y="${y-14}" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">${esc(s.name)}</text>`});
+  h+=`<circle cx="${C}" cy="${C}" r="9" fill="#c62828"/><text x="${C}" y="${C+26}" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">いまここ</text>`;
+ }else h+=`<text x="${C}" y="${C}" text-anchor="middle" font-size="15" fill="currentColor">位置情報を取得してください</text>`;
+ svg.innerHTML=h;svg.style.color=getComputedStyle(document.body).color;
+ $('#list').innerHTML=withD.sort((a,b)=>(a.d??0)-(b.d??0)).map(s=>`<div class="sh"><div><b>${esc(s.name)}</b><small>${s.d!=null?'約'+fmtD(s.d)+'・徒歩 約'+mins(s.d)+'分':'距離は現在地の取得後に表示'}</small></div><div style="display:flex;gap:6px"><a href="${mapsDir(s)}" target="_blank" rel="noopener" style="color:var(--sea);font-weight:700">道順</a><button data-i="${s.i}" aria-label="${esc(s.name)}を削除">削除</button></div></div>`).join('')||'<p class="note">避難所はまだ登録されていません。</p>';
+ $('#list').querySelectorAll('button').forEach(b=>b.onclick=()=>{shelters.splice(+b.dataset.i,1);store.set('bt_sh',shelters);drawMap()});
+}
+function esc(t){return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+/* 災害アナウンサー（訓練） */
+$('#drill').onclick=()=>{
+ const eta=+$('#eta').value||20;
+ const go=()=>{
+  const near=shelters.map(s=>({...s,d:me?dist(me,s):null})).filter(s=>s.d!=null).sort((a,b)=>a.d-b.d)[0];
+  let msg='【訓練】津波警報です。あと'+eta+'分で津波が来るおそれがあります。すぐに高い場所へ避難してください。';
+  let extra='';
+  if(near){const t=mins(near.d);extra=`最も近い避難所は「${near.name}」、約${fmtD(near.d)}、徒歩約${t}分です。`+(t>=eta?`到達予想に間に合わない可能性があります。近くの高い建物にも上がってください。`:`${eta-t}分の余裕があります。いま出発してください。`)}
+  else extra='避難所が未登録、または現在地が未取得です。「ピンチマップ」で設定しておきましょう。';
+  $('#annout').innerHTML=`<div class="banner">${esc(msg)}</div><div class="card"><b>${esc(extra)}</b>${near?`<a class="big" href="${mapsDir(near)}" target="_blank" rel="noopener">Googleマップで避難ルートを開く</a>`:''}</div>${wideHtml()}`;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(msg+extra);u.lang='ja-JP';u.rate=.9;speechSynthesis.speak(u)}catch(e){}
+ };
+ me?go():getLoc(go);
+ if(!me)setTimeout(()=>{if(!$('#annout').innerHTML)go()},11000);
+};
+
+/* 広域避難場所（大阪市 令和8年3月31日時点）codes: 火災,地震,津波,洪水 / o=可 x=不可 p=一部可 -=想定せず */
+const WARDS=['北区','都島区','福島区','此花区','中央区','西区','港区','大正区','天王寺区','浪速区','西淀川区','淀川区','東淀川区','東成区','生野区','旭区','城東区','阿倍野区','住吉区','東住吉区','平野区','鶴見区','住之江区','西成区'];
+const KIND=['火災','地震','津波','洪水'];
+const RV='河川敷公園のため、津波の有無に関わらず地震時も不可';
+const SITES=[
+['新大阪駅北側','西淀川区,淀川区','ooxx'],['鶴見緑地','旭区,城東区,鶴見区','ooox'],['うめきた（一部休止中）','北区,福島区,中央区,西区','ooxx','令和7年7月1日に休止していた一部を開放'],
+['大阪城公園一帯','都島区,中央区,天王寺区,東成区,生野区,城東区,鶴見区','ooox'],['靱公園','北区,福島区,中央区,西区','oox-'],['天王寺公園','中央区,天王寺区,浪速区,生野区,阿倍野区,西成区','ooox'],
+['千島','大正区','oox-'],['津守','浪速区,西成区','ooxx'],['住之江公園一帯','住之江区,住吉区,西成区','ooxx'],['長居公園','阿倍野区,住吉区,東住吉区,平野区','ooox'],
+['百済貨物ターミナル駅','生野区,東住吉区,平野区','ooox'],['瓜破霊園','東住吉区,平野区','ooox'],['大阪公立大学','住之江区,住吉区','ooo-'],['西淀川中島地区','西淀川区,淀川区','oox-'],
+['八幡屋公園','港区','oox-'],['十三柴島','西淀川区,淀川区,東淀川区','oxxx',RV],['毛馬','都島区,旭区,城東区','oxxx',RV],['豊里','東淀川区','oxxx',RV],['太子橋','旭区','oxxx',RV],
+['中之島','北区,福島区,中央区,西区','oop-','河川敷遊歩道・中之島西公園は津波不可、地震も不可'],['久宝寺緑地','平野区','ooox'],['淀川リバーサイド地区','北区','oopx','河川敷遊歩道は津波・地震とも不可'],
+['高見地区','福島区,此花区','ooxx'],['城北公園','都島区,旭区,城東区','ooox'],['阿倍野再開発地区','中央区,天王寺区,浪速区,生野区,阿倍野区,西成区','ooo-'],['旭公園一帯','都島区,旭区,城東区','ooxx'],
+['出来島地区','西淀川区,淀川区','ooxx'],['南港中央公園','住之江区','oox-'],['沢之町公園一帯','住之江区,住吉区','ooox'],['佃地区','西淀川区,淀川区','oox-'],['浪速公園一帯','中央区,西区,浪速区,西成区','ooxx'],
+['下福島公園地区','北区,福島区,中央区,西区','ooxx'],['巽東緑地','生野区,東住吉区,平野区','ooox'],['蒲生公園一帯','城東区','ooxx']];
+const SYM={o:'可',x:'不可','p':'一部可','-':'想定せず'};
+/* おおよその位置（地点の中心付近の目安・並べ替え用）。正確な位置と距離は「地図で見る」「道順」で確認 */
+const POS=[[34.736,135.499],[34.7117,135.5776],[34.7055,135.4945],[34.6873,135.5262],[34.6769,135.4912],[34.6511,135.5128],[34.636,135.463],[34.643,135.474],[34.609,135.482],[34.6126,135.519],[34.623,135.553],[34.610,135.552],[34.5975,135.5075],[34.726,135.486],[34.6636,135.4653],[34.724,135.493],[34.728,135.533],[34.737,135.540],[34.723,135.548],[34.693,135.493],[34.610,135.585],[34.714,135.505],[34.689,135.462],[34.730,135.537],[34.643,135.513],[34.7185,135.539],[34.703,135.452],[34.6125,135.413],[34.607,135.496],[34.712,135.455],[34.652,135.499],[34.697,135.476],[34.635,135.557],[34.708,135.555]];
+const POSM=Object.fromEntries(SITES.map((s,i)=>[s[0],POS[i]]));
+const dkm=s=>me?dist(me,{lat:POSM[s[0]][0],lng:POSM[s[0]][1]}):null;
+const byDist=a=>me?[...a].sort((x,y)=>dkm(x)-dkm(y)):a;
+function distTxt(s){const d=dkm(s);if(d==null)return '';const km=d/1000,t=Math.max(1,Math.round(d*1.3/Number($('#spd').value)));
+ return `<div class='note'>直線で${km<0.5?'約0.5km以内':'約'+(Math.round(km*2)/2)+'km'}・徒歩 約${t}分（目安）</div>`}
+const inW=(s,w)=>!w||s[1].split(',').includes(w);
+const qn=s=>encodeURIComponent('大阪市 '+s[0]);
+function siteCard(s,full){
+ const b=s[2].split('').map((c,i)=>`<span class="bd ${c=='-'?'x':c}">${KIND[i]}${SYM[c]}</span>`).join('');
+ return `<div class="card"><b>${esc(s[0])}</b><div class="note">${esc(s[1].split(',').join('・'))}</div>${distTxt(s)}${full?b:''}${s[3]?`<div class="note">${esc(s[3])}</div>`:''}<div class="lk"><a href="https://www.google.com/maps/search/?api=1&query=${qn(s)}" target="_blank" rel="noopener">地図で見る</a><a href="https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=${qn(s)}${me?'&origin='+me.lat+','+me.lng:''}" target="_blank" rel="noopener">道順</a></div></div>`;
+}
+function wideHtml(){
+ const w=store.get('bt_ward','');
+ if(!w)return '<div class="card"><b>「避難場所一覧」でお住まいの区を選ぶと、津波のときに使える広域避難場所をここに表示します。</b></div>';
+ const t=byDist(SITES.filter(s=>inW(s,w)&&'op'.includes(s[2][2])));
+ return `<div class="card"><b>${esc(w)}で津波のときに使える広域避難場所</b></div>`+(t.length?t.map(s=>siteCard(s,false)).join(''):'<div class="card">この区の避難圏域に、津波の避難先として使える広域避難場所はありません。近くの津波避難ビルや高い建物を探してください。</div>');
+}
+function renderSites(){
+ const w=$('#ward').value,k=KIND.indexOf($('#kind').value);
+ if(k==3){$('#sites').innerHTML='<div class="card">広域避難場所は、洪水の避難先としては想定されていません。お住まいの区のハザードマップで、洪水用の避難所を確認してください。</div>';return}
+ const r=byDist(SITES.filter(s=>inW(s,w)&&(k<0||'op'.includes(s[2][k]))));
+ $('#sites').innerHTML=r.length?r.map(s=>siteCard(s,true)).join(''):'<div class="card">条件に合う広域避難場所はありません。</div>';
+}
+$('#ward').innerHTML='<option value="">すべての区</option>'+WARDS.map(x=>`<option>${x}</option>`).join('');
+$('#ward').value=store.get('bt_ward','');
+$('#ward').onchange=()=>{store.set('bt_ward',$('#ward').value);renderSites()};
+$('#kind').onchange=renderSites;
+$('#loc2').onclick=()=>{$('#locmsg2').textContent='位置情報を取得しています。許可の確認が出たら「許可」を押してください。';getLoc(()=>{$('#locmsg2').textContent='現在地から近い順に並べました。距離は直線の目安です。'})};
+renderSites();
+drawMap();
+</script>
+</body>
+</html>
