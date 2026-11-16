@@ -38,10 +38,13 @@ svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:12px
 .bd.o{background:var(--sea);color:#fff;border-color:var(--sea)}.bd.p{border-color:var(--sun);color:var(--ink)}.bd.x{color:var(--sub);text-decoration:line-through}
 .lk{display:flex;gap:8px;margin-top:6px}.lk a{flex:1;text-align:center;text-decoration:none;font-weight:700;padding:10px;border-radius:10px;border:2px solid var(--sea);color:var(--sea)}
 :focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+#net{display:none;max-width:720px;margin:6px auto;padding:10px 14px;border-radius:10px;background:var(--sun);color:#12304a;font-size:15px;font-weight:700}
+#net.on{display:block}
 </style>
 </head>
 <body>
 <header><h1>Best Tomorrow</h1><p>明るい未来のために私たちができること（大阪市内版）</p></header>
+<div id="net" role="status">オフラインです。距離・徒歩時間・避難案内・避難場所一覧は使えます。Googleマップのリンクは通信が戻るまで開けません。</div>
 <nav role="tablist">
 <button role="tab" data-t="map" aria-selected="true">ピンチマップ</button>
 <button role="tab" data-t="ann" aria-selected="false">災害アナウンサー</button>
@@ -86,10 +89,8 @@ svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:12px
 <section id="ann">
 <div class="card">
 <h2>災害アナウンサー</h2>
-<p class="note">いまは訓練モードです。実際の警報は、気象庁やお住まいの自治体の情報を必ず確認してください。</p>
-<label for="eta">津波の到達予想（分後）</label>
-<input id="eta" type="number" inputmode="numeric" value="20" min="1">
-<button class="big red" id="drill">避難訓練を始める</button>
+<p class="note">このアプリは警報を自動では受信できません。津波警報などが出たら、下のボタンを押して避難案内を始めてください。警報の確認は、携帯電話の緊急速報や気象庁の情報で行ってください。</p>
+<button class="big red" id="drill">津波警報が出た：避難案内を始める</button>
 </div>
 <div id="annout"></div>
 <div class="card"><a class="big alt" href="https://www.jma.go.jp/bosai/map.html" target="_blank" rel="noopener">気象庁の防災情報を開く</a></div>
@@ -157,12 +158,11 @@ function esc(t){return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','
 
 /* 災害アナウンサー（訓練） */
 $('#drill').onclick=()=>{
- const eta=+$('#eta').value||20;
  const go=()=>{
   const near=shelters.map(s=>({...s,d:me?dist(me,s):null})).filter(s=>s.d!=null).sort((a,b)=>a.d-b.d)[0];
-  let msg='【訓練】津波警報です。あと'+eta+'分で津波が来るおそれがあります。すぐに高い場所へ避難してください。';
+  let msg='津波のおそれがあります。すぐに高い場所へ避難してください。';
   let extra='';
-  if(near){const t=mins(near.d);extra=`最も近い避難所は「${near.name}」、約${fmtD(near.d)}、徒歩約${t}分です。`+(t>=eta?`到達予想に間に合わない可能性があります。近くの高い建物にも上がってください。`:`${eta-t}分の余裕があります。いま出発してください。`)}
+  if(near){const t=mins(near.d);extra=`最も近い避難所は「${near.name}」、約${fmtD(near.d)}、徒歩約${t}分です。いますぐ出発してください。遠い場合は、近くの高い建物にも上がってください。`}
   else extra='避難所が未登録、または現在地が未取得です。「ピンチマップ」で設定しておきましょう。';
   $('#annout').innerHTML=`<div class="banner">${esc(msg)}</div><div class="card"><b>${esc(extra)}</b>${near?`<a class="big" href="${mapsDir(near)}" target="_blank" rel="noopener">Googleマップで避難ルートを開く</a>`:''}</div>${wideHtml()}`;
   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(msg+extra);u.lang='ja-JP';u.rate=.9;speechSynthesis.speak(u)}catch(e){}
@@ -216,6 +216,8 @@ $('#ward').value=store.get('bt_ward','');
 $('#ward').onchange=()=>{store.set('bt_ward',$('#ward').value);renderSites()};
 $('#kind').onchange=renderSites;
 $('#loc2').onclick=()=>{$('#locmsg2').textContent='位置情報を取得しています。許可の確認が出たら「許可」を押してください。';getLoc(()=>{$('#locmsg2').textContent='現在地から近い順に並べました。距離は直線の目安です。'})};
+function netChk(){$('#net').classList.toggle('on',!navigator.onLine)}
+addEventListener('online',netChk);addEventListener('offline',netChk);netChk();
 renderSites();
 drawMap();
 </script>
