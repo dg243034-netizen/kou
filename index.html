@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -48,23 +49,16 @@ svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:12px
 <nav role="tablist">
 <button role="tab" data-t="map" aria-selected="true">ピンチマップ</button>
 <button role="tab" data-t="ann" aria-selected="false">災害アナウンサー</button>
-<button role="tab" data-t="wide" aria-selected="false">避難場所一覧</button>
 </nav>
 <main>
 
 <section id="map" class="on">
 <div class="card">
-<h2>いまの場所と避難所（大阪市内）</h2>
-<button class="big" id="loc">位置情報を取得する</button>
-<p id="locmsg" class="note">位置情報を許可すると、避難所までの距離と時間がわかります。</p>
-<svg id="radar" viewBox="0 0 320 320" role="img" aria-label="現在地と避難所の位置関係"></svg>
-<p class="note">この図は方角と距離の目安です。実際の道順はGoogleマップで確認します。</p>
-</div>
-<div class="card">
 <h2>避難所を設定しておく</h2>
 <label for="sname">避難所の名前</label>
 <input id="sname" placeholder="例：〇〇小学校">
 <button class="big" id="addhere">いまいる場所を避難所として登録</button>
+<p id="shmsg" class="note" role="status"></p>
 <a class="big alt" id="find" href="#" target="_blank" rel="noopener">Googleマップで大阪市の避難所を探す</a>
 <details><summary class="note">緯度・経度を入力して登録</summary>
 <label for="slat">緯度</label><input id="slat" inputmode="decimal" placeholder="34.6937">
@@ -76,11 +70,8 @@ svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:12px
 <label for="spd">歩く速さ（避難にかかる時間の計算に使います）</label>
 <select id="spd"><option value="60">ふつうに歩ける</option><option value="40">ゆっくり歩く</option><option value="25">杖や手すりが必要</option></select>
 </div>
-</section>
-
-<section id="wide">
-<div class="card"><h2>広域避難場所（大阪市）</h2>
-<button class="big" id="loc2">現在地から近い順に並べる</button><p id="locmsg2" class="note">現在地を取得すると、近い順に表示します。</p>
+<div class="card"><h2>避難場所一覧（広域避難場所・大阪市）</h2>
+<button class="big" id="loc2">現在地から近い順に並べる</button><p id="locmsg" class="note">現在地を取得すると、近い順に表示します。</p>
 <label for="ward">お住まいの区</label><select id="ward"></select>
 <label for="kind">災害の種類</label><select id="kind"><option value="">すべて</option><option>津波</option><option>地震</option><option>火災</option><option>洪水</option></select>
 <p class="note">大阪市の広域避難場所一覧（令和8年3月31日時点）をもとにしています。津波の「可」は、南海トラフ巨大地震の津波浸水想定域の外にある場合です。場所は地図で必ず確認してください。</p></div>
@@ -124,19 +115,20 @@ function getLoc(cb){
  if(!navigator.geolocation){$('#locmsg').textContent='この端末では位置情報を使えません。緯度・経度の入力で登録してください。';return}
  navigator.geolocation.getCurrentPosition(p=>{me={lat:p.coords.latitude,lng:p.coords.longitude};
   $('#locmsg').textContent=inOsaka(me.lat,me.lng)?'現在地を取得しました。':'現在地が大阪市の外のようです。このアプリは大阪市内専用です。';$('#find').href='https://www.google.com/maps/search/大阪市+避難所/@'+(inOsaka(me.lat,me.lng)?me.lat+','+me.lng:'34.6937,135.5023')+',14z';drawMap();if(typeof renderSites=='function')renderSites();cb&&cb()},
- ()=>{$('#locmsg').textContent='位置情報を取得できませんでした。設定で位置情報の利用を許可してください。'},{enableHighAccuracy:true,timeout:10000});
+ ()=>{$('#locmsg').textContent='位置情報を取得できませんでした。設定で位置情報の利用を許可してください。';say('現在地を取得できませんでした。「緯度・経度を入力して登録」から登録してください。');const d=document.querySelector('details');if(d)d.open=true},{enableHighAccuracy:true,timeout:10000});
 }
-$('#loc').onclick=()=>getLoc();
+
 $('#find').href='https://www.google.com/maps/search/大阪市+避難所/@34.6937,135.5023,12z';
 
+function say(t){$('#shmsg').textContent=t}
 function addShelter(lat,lng){
- if(!inOsaka(lat,lng)){alert('大阪市内の場所だけ登録できます。');return}
+ if(!inOsaka(lat,lng)){say('大阪市内の場所だけ登録できます。');return}
  const name=$('#sname').value.trim()||'避難所'+(shelters.length+1);
- shelters.push({name,lat,lng});store.set('bt_sh',shelters);$('#sname').value='';drawMap();
+ shelters.push({name,lat,lng});store.set('bt_sh',shelters);$('#sname').value='';say('「'+name+'」を登録しました。');drawMap();
 }
 $('#addhere').onclick=()=>{ if(me){addShelter(me.lat,me.lng)}else getLoc(()=>addShelter(me.lat,me.lng)) };
 $('#addman').onclick=()=>{const a=parseFloat($('#slat').value),b=parseFloat($('#slng').value);
- if(isNaN(a)||isNaN(b)||Math.abs(a)>90||Math.abs(b)>180){alert('緯度と経度を数字で入力してください。');return}
+ if(isNaN(a)||isNaN(b)||Math.abs(a)>90||Math.abs(b)>180){say('緯度と経度を数字で入力してください。');return}
  addShelter(a,b);$('#slat').value=$('#slng').value=''};
 
 function drawMap(){
@@ -150,7 +142,7 @@ function drawMap(){
   h+=`<line x1="${C}" y1="${C}" x2="${x}" y2="${y}" stroke="#f2a900" stroke-width="2" stroke-dasharray="5 4"/><circle cx="${x}" cy="${y}" r="9" fill="#1d7f8c"/><text x="${x}" y="${y-14}" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">${esc(s.name)}</text>`});
   h+=`<circle cx="${C}" cy="${C}" r="9" fill="#c62828"/><text x="${C}" y="${C+26}" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">いまここ</text>`;
  }else h+=`<text x="${C}" y="${C}" text-anchor="middle" font-size="15" fill="currentColor">位置情報を取得してください</text>`;
- svg.innerHTML=h;svg.style.color=getComputedStyle(document.body).color;
+ if(svg){svg.innerHTML=h;svg.style.color=getComputedStyle(document.body).color}
  $('#list').innerHTML=withD.sort((a,b)=>(a.d??0)-(b.d??0)).map(s=>`<div class="sh"><div><b>${esc(s.name)}</b><small>${s.d!=null?'約'+fmtD(s.d)+'・徒歩 約'+mins(s.d)+'分':'距離は現在地の取得後に表示'}</small></div><div style="display:flex;gap:6px"><a href="${mapsDir(s)}" target="_blank" rel="noopener" style="color:var(--sea);font-weight:700">道順</a><button data-i="${s.i}" aria-label="${esc(s.name)}を削除">削除</button></div></div>`).join('')||'<p class="note">避難所はまだ登録されていません。</p>';
  $('#list').querySelectorAll('button').forEach(b=>b.onclick=()=>{shelters.splice(+b.dataset.i,1);store.set('bt_sh',shelters);drawMap()});
 }
@@ -201,7 +193,7 @@ function siteCard(s,full){
 }
 function wideHtml(){
  const w=store.get('bt_ward','');
- if(!w)return '<div class="card"><b>「避難場所一覧」でお住まいの区を選ぶと、津波のときに使える広域避難場所をここに表示します。</b></div>';
+ if(!w)return '<div class="card"><b>「ピンチマップ」の「避難場所一覧」でお住まいの区を選ぶと、津波のときに使える広域避難場所をここに表示します。</b></div>';
  const t=byDist(SITES.filter(s=>inW(s,w)&&'op'.includes(s[2][2])));
  return `<div class="card"><b>${esc(w)}で津波のときに使える広域避難場所</b></div>`+(t.length?t.map(s=>siteCard(s,false)).join(''):'<div class="card">この区の避難圏域に、津波の避難先として使える広域避難場所はありません。近くの津波避難ビルや高い建物を探してください。</div>');
 }
@@ -215,7 +207,7 @@ $('#ward').innerHTML='<option value="">すべての区</option>'+WARDS.map(x=>`<
 $('#ward').value=store.get('bt_ward','');
 $('#ward').onchange=()=>{store.set('bt_ward',$('#ward').value);renderSites()};
 $('#kind').onchange=renderSites;
-$('#loc2').onclick=()=>{$('#locmsg2').textContent='位置情報を取得しています。許可の確認が出たら「許可」を押してください。';getLoc(()=>{$('#locmsg2').textContent='現在地から近い順に並べました。距離は直線の目安です。'})};
+$('#loc2').onclick=()=>{$('#locmsg').textContent='位置情報を取得しています。許可の確認が出たら「許可」を押してください。';getLoc(()=>{$('#locmsg').textContent='現在地から近い順に並べました。距離は直線の目安です。'})};
 function netChk(){$('#net').classList.toggle('on',!navigator.onLine)}
 addEventListener('online',netChk);addEventListener('offline',netChk);netChk();
 renderSites();
